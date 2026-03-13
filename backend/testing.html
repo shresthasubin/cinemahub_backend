@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Socket Test</title>
+</head>
+
+<body>
+
+    <h2>Socket Connected</h2>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        const userId = prompt("Enter user ID");
+
+        const socket = io("http://localhost:3000", {
+            query: { userId: userId }
+        });
+
+        socket.on("connect", () => {
+            console.log("Connected:", socket.id);
+        });
+
+        socket.on("newMessage", (data) => {
+            console.log("New message received:", data);
+            alert("New Message: " + data.message);
+        });
+    </script>
+
+</body>
+
+</html>
