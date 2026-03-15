@@ -82,7 +82,7 @@ const userLogin = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
+      sameSite: "lax",
       expires: new Date(Date.now() + 3600000),
     });
 

@@ -34,7 +34,7 @@ const createSeat = async (req, res) => {
     const { hallRoomId } = req.params
     const intRoomId = parseInt(hallRoomId)
     const hallRoom = await Hallroom.findByPk(intRoomId)
-    
+
     if (!hallRoom) {
       return res.status(404).json({
         success: false,
@@ -96,16 +96,16 @@ const createSeat = async (req, res) => {
     const seatNumber = type === "gap" ? `G${rowInt}-${columnInt}` : `${rowLabel}${seatNum + 1}`;
 
     const seat = await Seat.create({
-        hall_id: hallRoom.hall_id,
-        seat_number: seatNumber,
-        row_label: rowLabel,
-        row: rowInt,
-        column: columnInt,
-        hallroom_id: hallRoomId,
-        seatType: type === "gap"? null: seatType,
-        type
-      })
-    
+      hall_id: hallRoom.hall_id,
+      seat_number: seatNumber,
+      row_label: rowLabel,
+      row: rowInt,
+      column: columnInt,
+      hallroom_id: hallRoomId,
+      seatType: type === "gap" ? null : seatType,
+      type
+    })
+
 
     return res.status(201).json({
       success: true,

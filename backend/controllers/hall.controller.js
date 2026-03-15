@@ -231,10 +231,10 @@ const hallRegister = async (req, res) => {
     console.error("hallRegister error:", err);
     const validationDetails = Array.isArray(err?.errors)
       ? err.errors.map((e) => ({
-          field: e.path,
-          message: e.message,
-          value: e.value,
-        }))
+        field: e.path,
+        message: e.message,
+        value: e.value,
+      }))
       : null;
 
     return res.status(500).json({

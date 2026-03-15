@@ -6,6 +6,7 @@ import router from "./routes/index.js";
 import cookieParser from "cookie-parser";
 import bcrypt from "bcryptjs";
 import User from "./model/user.model.js";
+import { Notification } from "./model/notification.model.js";
 import swaggerSpec from "./swagger.js";
 import swaggerUi from "swagger-ui-express";
 import http from "http";

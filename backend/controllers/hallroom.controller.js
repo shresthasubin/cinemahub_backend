@@ -24,10 +24,10 @@ const createRoom = async (req, res) => {
             })
         }
 
-        
+
         const rowsInt = parseInt(rows)
         const columnsInt = parseInt(columns)
-        
+
         if (!Number.isInteger(rowsInt) || !Number.isInteger(columnsInt)) {
             return res.status(400).json({
                 success: false,
@@ -65,7 +65,7 @@ const createRoom = async (req, res) => {
             data: room
         })
 
-        
+
     } catch (err) {
         return res.status(500).json({
             success: false,
@@ -79,17 +79,17 @@ const deleteRoom = async (req, res) => {
     try {
         const { roomId } = req.params
         const room = await Hallroom.findByPk(roomId)
-    
+
         if (!room) {
             return res.status(404).json({
                 success: false,
                 message: "No Rows Found"
             })
         }
-    
+
         await Seat.destroy({ where: { hallroom_id: roomId } })
         await room.destroy()
-    
+
         return res.status(200).json({
             success: true,
             message: "Room has been deleted"

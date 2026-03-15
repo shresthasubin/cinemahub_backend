@@ -6,6 +6,7 @@ import Ticket from "../model/ticket.model.js";
 import BookingSeat from "../model/bookingSeat.model.js";
 import Seat from "../model/seat.model.js";
 import Hallclass from "../model/hallclass.model.js";
+import { Notification } from "../model/notification.model.js";
 import { sequelize } from "../db/index.js";
 import axios from "axios";
 import crypto from "crypto";
@@ -66,6 +67,13 @@ const generateTicketsForBooking = async ({ bookingId, userId, transaction }) => 
   if (existingTickets > 0) {
     if (booking.booking_status !== "confirmed") {
       await booking.update({ booking_status: "confirmed" }, { transaction });
+      await Notification.create({
+        userId,
+        title: "Booking Confirmed",
+        message: `Your booking #${booking.id} has been confirmed. Enjoy your movie!`,
+        type: "booking",
+        isRead: false,
+      }, { transaction });
     }
     return { booking, created: false };
   }
@@ -133,6 +141,17 @@ const generateTicketsForBooking = async ({ bookingId, userId, transaction }) => 
 
   await Ticket.bulkCreate(ticketsPayload, { transaction });
   await booking.update({ booking_status: "confirmed" }, { transaction });
+
+  await Notification.create(
+    {
+      userId,
+      title: "Tickets Generated",
+      message: `Your tickets for booking #${booking.id} are confirmed.`,
+      type: "ticket",
+      isRead: false,
+    },
+    { transaction }
+  );
 
   return { booking, created: true };
 };
@@ -322,6 +341,23 @@ const verifyPayment = async (req, res) => {
 
     if (paymentStatus === "failed" && booking.booking_status !== "cancelled") {
       await booking.update({ booking_status: "pending" });
+      await Notification.create({
+        userId: req.user.id,
+        title: "Payment Failed",
+        message: `Your payment for booking #${booking.id} has failed. Please try again.`,
+        type: "payment",
+        isRead: false,
+      });
+    }
+
+    if (paymentStatus === "success") {
+      await Notification.create({
+        userId: req.user.id,
+        title: "Payment Successful",
+        message: `Your payment for booking #${booking.id} has been confirmed. Tickets have been generated.`,
+        type: "payment",
+        isRead: false,
+      });
     }
 
     return res.status(200).json({
@@ -482,6 +518,7 @@ const checkEsewaPaymentStatus = async (req, res) => {
     const transactionUuid = String(
       req.body?.transaction_uuid || req.body?.product_id || "",
     ).trim();
+    const transactionCode = String(req.body?.transaction_code || "").trim();
 
     if (!transactionUuid) {
       return res.status(400).json({
@@ -516,6 +553,7 @@ const checkEsewaPaymentStatus = async (req, res) => {
         product_code: config.merchantId,
         total_amount: amount,
         transaction_uuid: transactionUuid,
+        ...(transactionCode ? { transaction_code: transactionCode } : {}),
       },
     });
 
@@ -542,6 +580,7 @@ const checkEsewaPaymentStatus = async (req, res) => {
       message: "Transaction status updated successfully",
       data: {
         transaction_uuid: transactionUuid,
+        transaction_code: transactionCode || null,
         gateway_status: rawStatus,
         payment_status: mappedStatus,
       },
