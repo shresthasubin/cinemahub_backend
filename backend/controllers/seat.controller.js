@@ -1,6 +1,5 @@
 import Hallroom from "../model/hallroom.model.js";
 import Seat from "../model/seat.model.js";
-import Hallclass from "../model/hallclass.model.js";
 
 const numberToAlphabet = (n) => {
   let result = "";

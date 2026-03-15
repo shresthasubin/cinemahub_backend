@@ -3,7 +3,6 @@ import { sequelize } from "../db/index.js";
 import Booking from "../model/booking.model.js";
 import BookingSeat from "../model/bookingSeat.model.js";
 import Hall from "../model/hall.model.js";
-import Hallclass from "../model/hallclass.model.js";
 import Hallroom from "../model/hallroom.model.js";
 import Movie from "../model/movie.model.js";
 import { Notification } from "../model/notification.model.js";

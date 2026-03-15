@@ -1,7 +1,6 @@
 import Hall from "../model/hall.model.js";
 import Hallroom from "../model/hallroom.model.js";
 import Seat from "../model/seat.model.js";
-import Hallclass from "../model/hallclass.model.js";
 import { sequelize } from "../db/index.js";
 import { Op } from "sequelize";
 
