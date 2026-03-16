@@ -11,7 +11,6 @@ const verifyJWT = async (req, res, next) => {
                 message: 'Authentication token not found'
             })
         }
-
         const decodedToken = jwt.verify(token, process.env.TOKEN_SECRET)
         const user = await User.findByPk(decodedToken.id, {
             attributes: {exclude: ['password']}

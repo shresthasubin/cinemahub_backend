@@ -122,7 +122,7 @@ const hallRegister = async (req, res) => {
 
     const existingHall = await Hall.findOne({
       where: {
-        [Op.or]: [{ hall_name }, { hall_contact }, { license }],
+        [Op.or]: [{ hall_name }, { hall_contact }, { license }],  
       },
     });
 
