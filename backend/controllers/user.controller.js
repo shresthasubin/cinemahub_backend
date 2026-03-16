@@ -49,6 +49,7 @@ const userLogin = async (req, res) => {
     const userExist = await User.findOne({
       where: {
         email,
+        isDeleted: false,
       },
     });
     if (!userExist) {
@@ -123,7 +124,7 @@ const userDelete = async (req, res) => {
     }
 
     if (user.role !== "admin") {
-      user.isDeleted = !user.isDeleted;
+      user.isDeleted = true;
       await user.save();
     }
 
@@ -143,7 +144,9 @@ const userDelete = async (req, res) => {
 // getting all user
 const userGetAll = async (req, res) => {
   try {
-    const allUser = await User.findAll();
+    const allUser = await User.findAll({
+      where: { isDeleted: false },
+    });
 
     return res.status(200).json({
       success: true,
