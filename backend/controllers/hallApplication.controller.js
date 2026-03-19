@@ -7,6 +7,7 @@ import Seat from "../model/seat.model.js";
 import Hallclass from "../model/hallclass.model.js";
 import { Notification } from "../model/notification.model.js";
 import { Op } from "sequelize";
+import { uploadFileToCloudinary } from "../utils/cloudinary.js";
 
 const rowToLabel = (rowNumber) => {
   let result = "";
@@ -138,7 +139,12 @@ const createHallApplication = async (req, res) => {
     const applicantId = req.user.id;
     const { hall_name, hall_location, hall_contact, license, totalCapacity } =
       req.body;
-    const hallPoster = req.file?.filename || null;
+    const hallPosterUpload = req.file
+      ? await uploadFileToCloudinary(req.file, {
+          folder: "cinemahub/hall-applications",
+        })
+      : null;
+    const hallPoster = hallPosterUpload?.secure_url ?? null;
     const hallrooms = parseHallroomsPayload(req.body.hallrooms);
 
     if (!hall_name || !hall_location || !hall_contact || !license) {

@@ -1,5 +1,9 @@
 import { Notification } from "../model/notification.model.js";
 import Movie from "../model/movie.model.js";
+import {
+  uploadFileToCloudinary,
+  uploadFilesToCloudinary,
+} from "../utils/cloudinary.js";
 
 const parseListField = (value) => {
   if (Array.isArray(value)) {
@@ -24,9 +28,13 @@ const parseCastProfilesField = (value) => {
   }
 };
 
-const resolveCastPayload = ({ body, files, fallbackCasts = [], fallbackCastImages = [] }) => {
+const resolveCastPayload = ({
+  body,
+  uploadedCastImages = [],
+  fallbackCasts = [],
+  fallbackCastImages = [],
+}) => {
   const castProfiles = parseCastProfilesField(body?.castProfiles);
-  const uploadedCastImages = files?.castImages ?? [];
 
   if (castProfiles.length > 0) {
     const casts = [];
@@ -44,7 +52,7 @@ const resolveCastPayload = ({ body, files, fallbackCasts = [], fallbackCastImage
         fileIndex >= 0 &&
         fileIndex < uploadedCastImages.length
       ) {
-        castImage = uploadedCastImages[fileIndex]?.filename ?? null;
+        castImage = uploadedCastImages[fileIndex] ?? null;
       } else if (typeof profile?.image === "string" && profile.image.trim()) {
         castImage = profile.image.trim();
       }
@@ -58,8 +66,7 @@ const resolveCastPayload = ({ body, files, fallbackCasts = [], fallbackCastImage
 
   const casts = body?.casts === undefined ? fallbackCasts : parseListField(body.casts);
   const castImagesFromBody = body?.castImages === undefined ? fallbackCastImages : parseListField(body.castImages);
-  const castImagesFromFiles =
-    uploadedCastImages.map((file) => file.filename).filter(Boolean) ?? [];
+  const castImagesFromFiles = uploadedCastImages.filter(Boolean) ?? [];
   const castImages = castImagesFromFiles.length > 0 ? castImagesFromFiles : castImagesFromBody;
 
   return { casts, castImages };
@@ -83,11 +90,6 @@ const movieRegister = async (req, res) => {
     }
 
     const genreArr = parseListField(genre);
-    const { casts: castsArr, castImages: castImagesArr } = resolveCastPayload({
-      body: req.body,
-      files: req.files,
-    });
-
     if (!req.user) {
       return res.status(404).json({
         success: false,
@@ -104,6 +106,7 @@ const movieRegister = async (req, res) => {
 
     const moviePoster = req.files?.moviePoster?.[0];
     const movieTrailer = req.files?.movieTrailer?.[0];
+    const castImageFiles = req.files?.castImages ?? [];
 
     if (!moviePoster || !movieTrailer) {
       return res.status(400).json({
@@ -111,6 +114,28 @@ const movieRegister = async (req, res) => {
         message: "Trailer and Poster are required",
       });
     }
+
+    const [moviePosterUpload, movieTrailerUpload, castImageUploads] =
+      await Promise.all([
+        uploadFileToCloudinary(moviePoster, { folder: "cinemahub/movies/posters" }),
+        uploadFileToCloudinary(movieTrailer, { folder: "cinemahub/movies/trailers" }),
+        uploadFilesToCloudinary(castImageFiles, {
+          folder: "cinemahub/movies/cast-images",
+        }),
+      ]);
+
+    if (!moviePosterUpload || !movieTrailerUpload) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to upload movie media to Cloudinary",
+      });
+    }
+
+    const castImageUrls = castImageUploads.map((upload) => upload.secure_url);
+    const { casts: castsArr, castImages: castImagesArr } = resolveCastPayload({
+      body: req.body,
+      uploadedCastImages: castImageUrls,
+    });
 
     const date = new Date();
     const endDate = new Date(date);
@@ -128,8 +153,8 @@ const movieRegister = async (req, res) => {
       releaseDate: date.toISOString().split("T")[0],
       isPlaying: true,
       playEndDate: endDate.toISOString().split("T")[0],
-      moviePoster: moviePoster.filename,
-      movieTrailer: movieTrailer.filename,
+      moviePoster: moviePosterUpload.secure_url,
+      movieTrailer: movieTrailerUpload.secure_url,
     });
 
     await Notification.create({
@@ -274,8 +299,9 @@ const movieUpdate = async (req, res) => {
       releaseDate,
       isPlaying,
     } = req.body;
-    const moviePoster = req.files?.moviePoster?.[0]?.filename;
-    const movieTrailer = req.files?.movieTrailer?.[0]?.filename;
+    const moviePosterFile = req.files?.moviePoster?.[0];
+    const movieTrailerFile = req.files?.movieTrailer?.[0];
+    const castImageFiles = req.files?.castImages ?? [];
     let newEndDate = movie.playEndDate;
 
     if (releaseDate) {
@@ -283,10 +309,20 @@ const movieUpdate = async (req, res) => {
       newEndDate.setDate(newEndDate.getDate() + 7);
     }
 
+    const [moviePosterUpload, movieTrailerUpload, castImageUploads] =
+      await Promise.all([
+        uploadFileToCloudinary(moviePosterFile, { folder: "cinemahub/movies/posters" }),
+        uploadFileToCloudinary(movieTrailerFile, { folder: "cinemahub/movies/trailers" }),
+        uploadFilesToCloudinary(castImageFiles, {
+          folder: "cinemahub/movies/cast-images",
+        }),
+      ]);
+
+    const castImageUrls = castImageUploads.map((upload) => upload.secure_url);
     const parsedGenre = genre === undefined ? movie.genre : parseListField(genre);
     const { casts: parsedCasts, castImages: parsedCastImages } = resolveCastPayload({
       body: req.body,
-      files: req.files,
+      uploadedCastImages: castImageUrls,
       fallbackCasts: movie.casts,
       fallbackCastImages: movie.castImages,
     });
@@ -302,8 +338,8 @@ const movieUpdate = async (req, res) => {
         writer === undefined ? movie.writer : typeof writer === "string" ? writer.trim() : movie.writer,
       casts: parsedCasts,
       castImages: parsedCastImages,
-      moviePoster: moviePoster ?? movie.moviePoster,
-      movieTrailer: movieTrailer ?? movie.movieTrailer,
+      moviePoster: moviePosterUpload?.secure_url ?? movie.moviePoster,
+      movieTrailer: movieTrailerUpload?.secure_url ?? movie.movieTrailer,
       releaseDate: releaseDate ?? movie.releaseDate,
       isPlaying: isPlaying ?? movie.isPlaying,
       playEndDate: newEndDate,

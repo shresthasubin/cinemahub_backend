@@ -4,6 +4,7 @@ import Seat from "../model/seat.model.js";
 import Hallclass from "../model/hallclass.model.js";
 import { sequelize } from "../db/index.js";
 import { Op } from "sequelize";
+import { uploadFileToCloudinary } from "../utils/cloudinary.js";
 
 const rowToLabel = (rowNumber) => {
   let result = "";
@@ -99,7 +100,10 @@ const hallRegister = async (req, res) => {
     const registeredDate = new Date();
     const hallrooms = parseHallroomsPayload(req.body.hallrooms);
 
-    const hallPoster = req.file?.filename;
+    const hallPosterUpload = req.file
+      ? await uploadFileToCloudinary(req.file, { folder: "cinemahub/halls" })
+      : null;
+    const hallPoster = hallPosterUpload?.secure_url ?? null;
 
     if (
       !hall_name ||
@@ -284,7 +288,10 @@ const hallUpdate = async (req, res) => {
       registeredDate,
     } = req.body;
 
-    const hallPoster = req.file?.filename;
+    const hallPosterUpload = req.file
+      ? await uploadFileToCloudinary(req.file, { folder: "cinemahub/halls" })
+      : null;
+    const hallPoster = hallPosterUpload?.secure_url ?? null;
     const updatePayload = {
       hall_name: hall_name ?? hall.hall_name,
       hall_location: hall_location ?? hall.hall_location,
