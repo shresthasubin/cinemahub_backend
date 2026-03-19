@@ -203,6 +203,14 @@ const userUpdate = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = parseInt(id, 10);
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid Id",
+      });
+    }
+
     const user = await User.findByPk(userId);
 
     if (!user) {
@@ -212,7 +220,7 @@ const userUpdate = async (req, res) => {
       });
     }
 
-    const { fullname, email, password, license } = req.body;
+    const { fullname, email, password, license, isDeleted } = req.body;
     const updates = {};
 
     if (typeof fullname === "string" && fullname.trim()) {
@@ -228,7 +236,25 @@ const userUpdate = async (req, res) => {
     }
 
     if (typeof license === "string" && license.trim()) {
-      updates.license = license.trim()
+      updates.license = license.trim();
+    }
+
+    if (typeof isDeleted !== "undefined") {
+      if (typeof isDeleted !== "boolean") {
+        return res.status(400).json({
+          success: false,
+          message: "isDeleted must be a boolean value",
+        });
+      }
+
+      if (user.role === "admin") {
+        return res.status(400).json({
+          success: false,
+          message: "Admin deleted status cannot be changed",
+        });
+      }
+
+      updates.isDeleted = isDeleted;
     }
 
     if (Object.keys(updates).length === 0) {
