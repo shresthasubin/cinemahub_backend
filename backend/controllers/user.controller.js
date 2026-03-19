@@ -49,7 +49,6 @@ const userLogin = async (req, res) => {
     const userExist = await User.findOne({
       where: {
         email,
-        isDeleted: false,
       },
     });
     if (!userExist) {
@@ -83,7 +82,7 @@ const userLogin = async (req, res) => {
 
     res.cookie("token", token, {
       httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'lax',
+      sameSite: "lax",
       expires: new Date(Date.now() + 3600000),
     });
 
@@ -104,7 +103,7 @@ const userLogin = async (req, res) => {
   }
 };
 
-// user delete
+// user soft delete
 const userDelete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -124,7 +123,7 @@ const userDelete = async (req, res) => {
     }
 
     if (user.role !== "admin") {
-      user.isDeleted = true;
+      user.isDeleted = !user.isDeleted;
       await user.save();
     }
 
@@ -148,7 +147,7 @@ const userGetAll = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: "Successfully obtained all users, including deleted ones",
+      message: "Successfully obtained all the user",
       data: allUser,
     });
   } catch (err) {
@@ -203,14 +202,6 @@ const userUpdate = async (req, res) => {
   try {
     const { id } = req.params;
     const userId = parseInt(id, 10);
-
-    if (!Number.isInteger(userId) || userId <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid Id",
-      });
-    }
-
     const user = await User.findByPk(userId);
 
     if (!user) {
@@ -220,7 +211,7 @@ const userUpdate = async (req, res) => {
       });
     }
 
-    const { fullname, email, password, license, isDeleted } = req.body;
+    const { fullname, email, password, license } = req.body;
     const updates = {};
 
     if (typeof fullname === "string" && fullname.trim()) {
@@ -236,25 +227,7 @@ const userUpdate = async (req, res) => {
     }
 
     if (typeof license === "string" && license.trim()) {
-      updates.license = license.trim();
-    }
-
-    if (typeof isDeleted !== "undefined") {
-      if (typeof isDeleted !== "boolean") {
-        return res.status(400).json({
-          success: false,
-          message: "isDeleted must be a boolean value",
-        });
-      }
-
-      if (user.role === "admin") {
-        return res.status(400).json({
-          success: false,
-          message: "Admin deleted status cannot be changed",
-        });
-      }
-
-      updates.isDeleted = isDeleted;
+      updates.license = license.trim()
     }
 
     if (Object.keys(updates).length === 0) {

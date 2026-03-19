@@ -6,6 +6,7 @@ import Hall from "../model/hall.model.js";
 import Hallclass from "../model/hallclass.model.js";
 import Hallroom from "../model/hallroom.model.js";
 import Movie from "../model/movie.model.js";
+import { Notification } from "../model/notification.model.js";
 import Seat from "../model/seat.model.js";
 import Showtime from "../model/showtime.model.js";
 import Ticket from "../model/ticket.model.js";
@@ -61,19 +62,19 @@ const getSeatAvailabilityForShowtime = async (req, res) => {
 
     const bookedRows = seatIds.length
       ? await BookingSeat.findAll({
-          where: { seat_id: { [Op.in]: seatIds } },
-          include: [
-            {
-              model: Booking,
-              required: true,
-              attributes: ["id", "showtime_id", "booking_status"],
-              where: {
-                showtime_id: showtimeId,
-                booking_status: "confirmed",
-              },
+        where: { seat_id: { [Op.in]: seatIds } },
+        include: [
+          {
+            model: Booking,
+            required: true,
+            attributes: ["id", "showtime_id", "booking_status"],
+            where: {
+              showtime_id: showtimeId,
+              booking_status: "confirmed",
             },
-          ],
-        })
+          },
+        ],
+      })
       : [];
 
     const bookedSeatIdSet = new Set(bookedRows.map((row) => row.seat_id));
@@ -193,6 +194,17 @@ const createTicketBooking = async (req, res) => {
         booking_status: "pending",
       },
       { transaction },
+    );
+
+    await Notification.create(
+      {
+        userId: req.user.id,
+        title: "Booking Created",
+        message: `Your booking #${booking.id} has been created. Complete payment to generate tickets.`,
+        type: "booking",
+        isRead: false,
+      },
+      { transaction }
     );
 
     await BookingSeat.bulkCreate(
@@ -326,6 +338,17 @@ const cancelMyBooking = async (req, res) => {
     await Ticket.update(
       { ticket_status: "cancelled" },
       { where: { booking_id: booking.id, user_id: req.user.id }, transaction },
+    );
+
+    await Notification.create(
+      {
+        userId: req.user.id,
+        title: "Booking Cancelled",
+        message: `Your booking #${booking.id} has been cancelled.`,
+        type: "booking",
+        isRead: false,
+      },
+      { transaction }
     );
 
     await transaction.commit();

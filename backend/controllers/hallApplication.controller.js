@@ -5,6 +5,7 @@ import User from "../model/user.model.js";
 import Hallroom from "../model/hallroom.model.js";
 import Seat from "../model/seat.model.js";
 import Hallclass from "../model/hallclass.model.js";
+import { Notification } from "../model/notification.model.js";
 import { Op } from "sequelize";
 
 const rowToLabel = (rowNumber) => {
@@ -198,10 +199,10 @@ const createHallApplication = async (req, res) => {
         error: err.message,
         details: Array.isArray(err.errors)
           ? err.errors.map((e) => ({
-              field: e.path,
-              message: e.message,
-              value: e.value,
-            }))
+            field: e.path,
+            message: e.message,
+            value: e.value,
+          }))
           : [],
       });
     }
@@ -405,20 +406,30 @@ const approveHallApplication = async (req, res) => {
 
     await tx.commit();
 
+    await Notification.create({
+      userId: applicant.id,
+      title: "Hall Application Approved",
+      message: `Your hall application for ${application.hall_name} has been approved.`,
+      type: "hall-application",
+      isRead: false,
+    });
+
     return res.status(200).json({
       success: true,
       message: "Application approved and user promoted to hall-admin",
       data: { application, hall: newHall },
     });
+
+
   } catch (err) {
     await tx.rollback();
     console.error("approveHallApplication error:", err);
     const details = Array.isArray(err?.errors)
       ? err.errors.map((e) => ({
-          field: e.path,
-          message: e.message,
-          value: e.value,
-        }))
+        field: e.path,
+        message: e.message,
+        value: e.value,
+      }))
       : null;
 
     return res.status(500).json({
@@ -455,6 +466,14 @@ const rejectHallApplication = async (req, res) => {
       reviewed_by: req.user.id,
       reviewed_at: new Date(),
       review_note: typeof reviewNote === "string" ? reviewNote.trim() : "",
+    });
+
+    await Notification.create({
+      userId: application.applicant_id,
+      title: "Hall Application Rejected",
+      message: `Your hall application for ${application.hall_name} has been rejected.`,
+      type: "hall-application",
+      isRead: false,
     });
 
     return res.status(200).json({

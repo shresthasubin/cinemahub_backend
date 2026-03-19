@@ -71,7 +71,7 @@ const getRoleBasedHallroomFilter = (req) => {
 const createShowtime = async (req, res) => {
   try {
     const { movieId, hallroomId } = req.params
-    
+
     if (!movieId || !hallroomId) {
       return res.status(400).json({
         success: false,
@@ -151,7 +151,7 @@ const createShowtime = async (req, res) => {
         message: "Showtime overlaps with another showtime in this hallroom",
       });
     }
-      
+
     const showtime = await Showtime.create({
       show_date,
       start_time: minuteToTime(startMinute),

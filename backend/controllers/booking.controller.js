@@ -2,6 +2,7 @@ import { Op } from "sequelize";
 import { sequelize } from "../db/index.js";
 import Booking from "../model/booking.model.js";
 import BookingSeat from "../model/bookingSeat.model.js";
+import { Notification } from "../model/notification.model.js";
 import Seat from "../model/seat.model.js";
 import Showtime from "../model/showtime.model.js";
 
@@ -69,6 +70,17 @@ export const bookSeat = async (req, res) => {
         booking_status: "pending",
       },
       { transaction },
+    );
+
+    await Notification.create(
+      {
+        userId,
+        title: "Booking Created",
+        message: `Your booking #${booking.id} has been created. Complete payment to confirm your seat.`,
+        type: "booking",
+        isRead: false,
+      },
+      { transaction }
     );
 
     await BookingSeat.create(
