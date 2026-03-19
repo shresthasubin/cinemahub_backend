@@ -104,7 +104,7 @@ const userLogin = async (req, res) => {
   }
 };
 
-// user soft delete
+// user delete
 const userDelete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -144,13 +144,11 @@ const userDelete = async (req, res) => {
 // getting all user
 const userGetAll = async (req, res) => {
   try {
-    const allUser = await User.findAll({
-      where: { isDeleted: false },
-    });
+    const allUser = await User.findAll();
 
     return res.status(200).json({
       success: true,
-      message: "Successfully obtained all the user",
+      message: "Successfully obtained all users, including deleted ones",
       data: allUser,
     });
   } catch (err) {
