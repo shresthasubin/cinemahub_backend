@@ -169,7 +169,7 @@ const requireEsewaConfig = () => {
   const config = {
     merchantId: process.env.ESEWA_MERCHANT_ID,
     secret: process.env.ESEWA_SECRET,
-    paymentUrl: process.env.ESEWA_PAYMENT_URL,
+    paymentUrl: process.env.ESEWA_PAYMENT_URL || "https://rc-epay.esewa.com.np/api/epay/main/v2/form",
     statusCheckUrl: process.env.ESEWA_PAYMENT_STATUS_CHECK_URL,
     successUrl: process.env.ESEWA_SUCCESS_URL,
     failureUrl: process.env.ESEWA_FAILURE_URL,
