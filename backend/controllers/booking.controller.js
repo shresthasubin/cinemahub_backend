@@ -5,6 +5,10 @@ import BookingSeat from "../model/bookingSeat.model.js";
 import { Notification } from "../model/notification.model.js";
 import Seat from "../model/seat.model.js";
 import Showtime from "../model/showtime.model.js";
+import User from "../model/user.model.js";
+import Payment from "../model/payment.model.js";
+import Hallroom from "../model/hallroom.model.js";
+import Hall from "../model/hall.model.js";
 
 const parsePositiveInt = (value) => {
   const n = Number(value);
@@ -99,5 +103,73 @@ export const bookSeat = async (req, res) => {
       await transaction.rollback();
     }
     return res.status(500).json({ success: false, message: "Booking failed", error: err.message });
+  }
+};
+
+export const getHallAdminBookings = async (req, res) => {
+  try {
+    if (!req.user?.license) {
+      return res.status(403).json({
+        success: false,
+        message: "Hall admin does not have an assigned license",
+      });
+    }
+
+    const bookings = await Booking.findAll({
+      include: [
+        {
+          model: User,
+          attributes: ["id", "fullname", "email"],
+        },
+        {
+          model: Showtime,
+          required: true,
+          attributes: ["id", "show_date", "start_time", "end_time", "movie_id", "hallroom_id"],
+          include: [
+            {
+              model: Hallroom,
+              required: true,
+              attributes: ["id", "roomName", "hall_id"],
+              include: [
+                {
+                  model: Hall,
+                  required: true,
+                  attributes: ["id", "hall_name", "license"],
+                  where: { license: req.user.license },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          model: BookingSeat,
+          attributes: ["booking_id", "seat_id"],
+          include: [
+            {
+              model: Seat,
+              attributes: ["id", "seat_number", "row_label", "row", "column", "seatType", "type"],
+            },
+          ],
+        },
+        {
+          model: Payment,
+          attributes: ["id", "payment_method", "transaction_id", "payment_status", "createdAt"],
+          required: false,
+        },
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Hall bookings fetched successfully",
+      data: bookings,
+    });
+  } catch (err) {
+    return res.status(500).json({
+      success: false,
+      message: "Server failed while fetching hall bookings",
+      error: err.message,
+    });
   }
 };
