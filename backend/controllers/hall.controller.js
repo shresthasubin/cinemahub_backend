@@ -296,7 +296,7 @@ const hallUpdate = async (req, res) => {
       hall_name: hall_name ?? hall.hall_name,
       hall_location: hall_location ?? hall.hall_location,
       hall_contact: hall_contact ?? hall.hall_contact,
-      license: license ?? hall.license,
+      license: req.user?.role === "hall-admin" ? hall.license : (license ?? hall.license),
       registeredDate: registeredDate ?? hall.registeredDate,
       hallPoster: hallPoster ?? hall.hallPoster,
     };

@@ -257,7 +257,7 @@ const userUpdate = async (req, res) => {
 const userMe = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
-      attributes: ["id", "fullname", "email", "role"],
+      attributes: ["id", "fullname", "email", "role", "license"],
     });
 
     if (!user) {

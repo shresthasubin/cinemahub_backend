@@ -15,6 +15,22 @@ const createRoom = async (req, res) => {
             })
         }
 
+        if (req.user?.role === "hall-admin") {
+            if (!req.user.license) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Hall admin does not have an assigned license",
+                })
+            }
+
+            if (hall.license !== req.user.license) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Not authorized to create rooms for this hall",
+                })
+            }
+        }
+
         const { roomName, rows, columns } = req.body
 
         if (!roomName || !rows || !columns) {
@@ -78,13 +94,34 @@ const createRoom = async (req, res) => {
 const deleteRoom = async (req, res) => {
     try {
         const { roomId } = req.params
-        const room = await Hallroom.findByPk(roomId)
+        const room = await Hallroom.findByPk(roomId, {
+            include: [{
+                model: Hall,
+                attributes: ["id", "license"],
+            }],
+        })
     
         if (!room) {
             return res.status(404).json({
                 success: false,
                 message: "No Rows Found"
             })
+        }
+
+        if (req.user?.role === "hall-admin") {
+            if (!req.user.license) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Hall admin does not have an assigned license",
+                })
+            }
+
+            if (room.Hall?.license !== req.user.license) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Not authorized to delete this room",
+                })
+            }
         }
     
         await Seat.destroy({ where: { hallroom_id: roomId } })
