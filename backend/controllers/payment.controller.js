@@ -167,12 +167,12 @@ const toGatewayAmount = (value) => {
 
 const requireEsewaConfig = () => {
   const config = {
-    merchantId: process.env.ESEWA_MERCHANT_ID,
-    secret: process.env.ESEWA_SECRET,
-    paymentUrl: process.env.ESEWA_PAYMENT_URL,
-    statusCheckUrl: process.env.ESEWA_PAYMENT_STATUS_CHECK_URL,
-    successUrl: process.env.ESEWA_SUCCESS_URL,
-    failureUrl: process.env.ESEWA_FAILURE_URL,
+    merchantId: String(process.env.ESEWA_MERCHANT_ID || "").trim(),
+    secret: String(process.env.ESEWA_SECRET || "").trim(),
+    paymentUrl: String(process.env.ESEWA_PAYMENT_URL || "").trim(),
+    statusCheckUrl: String(process.env.ESEWA_PAYMENT_STATUS_CHECK_URL || "").trim(),
+    successUrl: String(process.env.ESEWA_SUCCESS_URL || "").trim(),
+    failureUrl: String(process.env.ESEWA_FAILURE_URL || "").trim(),
   };
 
   const missing = Object.entries(config)
@@ -490,8 +490,6 @@ const initiateEsewaPayment = async (req, res) => {
       });
     }
 
-    const url = `${config.paymentUrl}?${new URLSearchParams(gatewayPayload).toString()}`;
-
     return res.status(200).json({
       success: true,
       message: "eSewa payment initiated",
@@ -499,7 +497,7 @@ const initiateEsewaPayment = async (req, res) => {
         payment,
         paymentUrl: config.paymentUrl,
         method: "POST",
-        url,
+        submissionMode: "form_post",
         payload: gatewayPayload,
       },
     });
