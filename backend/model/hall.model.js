@@ -13,7 +13,7 @@ const Hall = sequelize.define(
       },
     },
     hall_location: {
-      type: DataTypes.STRING(50),
+      type: DataTypes.STRING(250),
       allowNull: false,
       set(value) {
         this.setDataValue("hall_location", value.trim());
